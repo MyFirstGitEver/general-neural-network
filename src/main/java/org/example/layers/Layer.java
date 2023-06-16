@@ -1,10 +1,9 @@
 package org.example.layers;
 
-import org.example.chooser.SequentialGenerator;
+import org.example.chooser.numbergenerators.SequentialGenerator;
+import org.example.layers.weighted.WeightedLayer;
 import org.example.networks.Neuron;
 import org.example.Vector;
-
-import java.util.Arrays;
 
 public abstract class Layer {
     public final static class EdgeBuilder {

@@ -2,10 +2,9 @@ package org.example.networks;
 
 import org.example.Vector;
 import org.example.activators.FeedForwardSoftmaxActivator;
-import org.example.activators.FeedforwardReluActivator;
-import org.example.chooser.Concater;
-import org.example.chooser.OutputChooser;
-import org.example.layers.CompleteEdgeLayer;
+import org.example.chooser.concaters.Concater;
+import org.example.chooser.outputchoosers.OutputChooser;
+import org.example.layers.CompleteForwarder;
 import org.example.layers.Layer;
 import org.example.loss.Loss;
 import org.example.activators.Activator;
@@ -22,7 +21,7 @@ public class FeedforwardNetwork {
                                    DataGetter<Vector> xGetter,
                                    DataGetter<Vector> yGetter) throws Exception {
 
-        CompleteEdgeLayer[] layers = new CompleteEdgeLayer[activators.length];
+        CompleteForwarder[] layers = new CompleteForwarder[activators.length];
         layers[0] = inferFromActivator(sizes[0], sizes[1], activators[0], null);
 
         for(int i = 1;i < layers.length; i++) {
@@ -61,7 +60,7 @@ public class FeedforwardNetwork {
     public Vector output(Vector input) throws Exception {
         model.forward(new Vector[] { input });
 
-        return model.getOutputs()[0];
+        return model.getOutputs(1)[0];
     }
 
     public boolean train(double learningRate, int iteration, int batchSize, BufferedReader reader) throws Exception {
@@ -69,15 +68,15 @@ public class FeedforwardNetwork {
     }
 
     public void loadTestingToLayer(Vector[] W, Vector B, int layerId) {
-        model.loadTestingToLayer(W, B, layerId);
+        model.loadTestingToLayer(W, B, layerId, 0);
     }
 
-    public CompleteEdgeLayer inferFromActivator(
+    public CompleteForwarder inferFromActivator(
             int inputSize, int outputSize, Activator activator, Layer lastLayer) throws Exception {
         if(activator instanceof FeedForwardSoftmaxActivator) {
-            return CompleteEdgeLayer.Builder.buildDenseDense(inputSize, outputSize, activator, lastLayer);
+            return CompleteForwarder.Builder.buildDenseDense(inputSize, outputSize, activator, lastLayer);
         }
 
-        return CompleteEdgeLayer.Builder.buildDenseOne(inputSize, outputSize, activator, lastLayer);
+        return CompleteForwarder.Builder.buildDenseOne(inputSize, outputSize, activator, lastLayer);
     }
 }

@@ -1,4 +1,4 @@
-package org.example.chooser;
+package org.example.chooser.numbergenerators;
 
 public class SequentialGenerator extends NumberGenerator {
 

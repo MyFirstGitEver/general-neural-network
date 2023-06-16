@@ -1,6 +1,6 @@
 package org.example.networks;
 
-import org.example.chooser.NumberGenerator;
+import org.example.chooser.numbergenerators.NumberGenerator;
 
 public class Neuron {
     private double value;

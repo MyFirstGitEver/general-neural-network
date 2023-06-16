@@ -4,8 +4,7 @@ public class Learnable {
     private final static double beta = 0.9f;
     private final static double beta2 = 0.999f;
 
-    public Learnable() {
-    }
+    private double value, dValue, first, second;
 
     public Learnable(double value) {
         this.value = value;
@@ -24,8 +23,6 @@ public class Learnable {
 
         dValue = 0;
     }
-
-    private double value, dValue, first, second;
 
     public double getValue() {
         return value;

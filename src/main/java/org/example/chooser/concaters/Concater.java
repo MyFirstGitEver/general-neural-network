@@ -1,9 +1,9 @@
-package org.example.chooser;
+package org.example.chooser.concaters;
 
 import org.example.Vector;
 
 public class Concater {
-    private Vector[] inputs;
+    protected Vector[] inputs;
 
     public void setInputs(Vector[] inputs) throws Exception {
         if(inputs == null || inputs.length < 1) {

@@ -1,19 +1,24 @@
 package org.example.layers;
 
 import org.example.Vector;
-import org.example.layers.denselayer.activation.ActivationLayer;
-import org.example.layers.denselayer.activation.DenseActivationLayer;
-import org.example.layers.denselayer.weighted.DenseWeightedLayer;
-import org.example.layers.denselayer.weighted.WeightedLayer;
+import org.example.activators.FeedforwardTanhActivator;
+import org.example.activators.rnn.RNNSoftmaxActivator;
+import org.example.layers.activation.ActivationLayer;
+import org.example.layers.activation.DenseActivationLayer;
+import org.example.layers.activation.rnn.RNNActivationYLayer;
+import org.example.layers.weighted.DenseWeightedLayer;
+import org.example.layers.weighted.WeightedLayer;
 import org.example.activators.Activator;
+import org.example.layers.weighted.rnn.RNNWeightedHLayer;
+import org.example.layers.weighted.rnn.RNNWeightedYLayer;
 import org.example.neural.Matrix;
 
-public class CompleteEdgeLayer {
+public class CompleteForwarder {
     private final WeightedLayer weightedLayer;
     private final ActivationLayer activationLayer;
 
     public static final class Builder {
-        public static CompleteEdgeLayer buildDenseDense(
+        public static CompleteForwarder buildDenseDense(
                 int inputSize,
                 int outputSize,
                 Activator activator,
@@ -23,10 +28,10 @@ public class CompleteEdgeLayer {
             DenseWeightedLayer weightedLayer = new DenseWeightedLayer(inputSize, outputSize, lastLayer);
             DenseActivationLayer activationLayer = new DenseActivationLayer(outputSize, outputSize, weightedLayer, activator);
 
-            return new CompleteEdgeLayer(weightedLayer, activationLayer);
+            return new CompleteForwarder(weightedLayer, activationLayer);
         }
 
-        public static CompleteEdgeLayer buildDenseOne(
+        public static CompleteForwarder buildDenseOne(
                 int inputSize,
                 int outputSize,
                 Activator activator,
@@ -37,11 +42,44 @@ public class CompleteEdgeLayer {
             OneToOneActivationLayer activationLayer =
                     new OneToOneActivationLayer(outputSize, outputSize, weightedLayer, activator);
 
-            return new CompleteEdgeLayer(weightedLayer, activationLayer);
+            return new CompleteForwarder(weightedLayer, activationLayer);
+        }
+
+        public static CompleteForwarder buildFirstRNNLayer(
+                int inputSize, int priorKnowledgeSize, int outputSize) throws Exception {
+
+            WeightedLayer weightedLayer = new RNNWeightedHLayer(
+                    inputSize + priorKnowledgeSize + outputSize,
+                    priorKnowledgeSize, null, outputSize);
+
+            ActivationLayer activationLayer =
+                    new OneToOneActivationLayer(priorKnowledgeSize, priorKnowledgeSize, weightedLayer,
+                            new FeedforwardTanhActivator());
+
+            return new CompleteForwarder(weightedLayer, activationLayer);
+        }
+        public static CompleteForwarder buildSecondRNNLayer(
+                int inputSize,
+                int priorKnowledgeSize,
+                int outputSize,
+                ActivationLayer hActivationLayer) throws Exception {
+
+            WeightedLayer weightedLayer = new RNNWeightedYLayer(
+                    priorKnowledgeSize, priorKnowledgeSize + outputSize, hActivationLayer, outputSize);
+
+            ActivationLayer activationLayer = new RNNActivationYLayer(
+                    priorKnowledgeSize + outputSize,
+                    priorKnowledgeSize + inputSize + outputSize,
+                    outputSize,
+                    priorKnowledgeSize,
+                    weightedLayer,
+                    new RNNSoftmaxActivator());
+
+            return new CompleteForwarder(weightedLayer, activationLayer);
         }
     }
 
-    public CompleteEdgeLayer(WeightedLayer weightedLayer, ActivationLayer activationLayer) throws Exception {
+    public CompleteForwarder(WeightedLayer weightedLayer, ActivationLayer activationLayer) throws Exception {
         this.weightedLayer = weightedLayer;
         this.activationLayer = activationLayer;
 
@@ -68,7 +106,7 @@ public class CompleteEdgeLayer {
         weightedLayer.update(learningRate, outputCount, datasetSize);
     }
 
-    public void setEigenDeltaForLast(Vector eigenDeltaForLast) throws Exception {
+    public void setEigenDeltas(Vector eigenDeltaForLast) throws Exception {
         if(eigenDeltaForLast.size() != activationLayer.eigenDelta.length) {
             throw new Exception("Eigen delta vector does fit with the edge layer's activation layer");
         }
@@ -82,8 +120,8 @@ public class CompleteEdgeLayer {
         weightedLayer.clip();
     }
 
-    public void load(Vector[] w, Vector b) {
-        weightedLayer.load(w, b);
+    public void load(Vector[] w, Vector b, int offset) {
+        weightedLayer.load(w, b, offset);
     }
 
     public int getASize() {
@@ -110,5 +148,11 @@ public class CompleteEdgeLayer {
 
     public boolean valid(Matrix dW, Vector dB) {
         return weightedLayer.valid(dW, dB);
+    }
+
+    public CompleteForwarder sharedLayersForwarder(Layer lastLayer) throws Exception {
+        WeightedLayer weightedLayer = this.weightedLayer.copy(lastLayer);
+
+        return new CompleteForwarder(weightedLayer, activationLayer.copy(weightedLayer));
     }
 }

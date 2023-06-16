@@ -1,6 +1,6 @@
 package org.example.activators;
 
-import org.example.chooser.NumberGenerator;
+import org.example.chooser.numbergenerators.NumberGenerator;
 import org.example.networks.Neuron;
 
 public class FeedForwardSoftmaxActivator implements Activator {

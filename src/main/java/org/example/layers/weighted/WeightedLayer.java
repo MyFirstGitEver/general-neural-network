@@ -1,8 +1,8 @@
-package org.example.layers.denselayer.weighted;
+package org.example.layers.weighted;
 
 import org.example.Pair;
 import org.example.Vector;
-import org.example.chooser.NumberGenerator;
+import org.example.chooser.numbergenerators.NumberGenerator;
 import org.example.layers.Layer;
 import org.example.networks.Neuron;
 import org.example.neural.Matrix;
@@ -12,21 +12,37 @@ import java.util.HashMap;
 
 public abstract class WeightedLayer extends Layer {
     private final long hashFactor;
-    private final Learnable[] bParams;
-    private final HashMap<Long, Learnable> wParamsOf;
+    protected final Learnable[] bParams;
+    protected final HashMap<Long, Learnable> wParamsOf;
 
     public WeightedLayer(int inputSize, int outputSize, Layer previousLayer) {
         super(inputSize, outputSize, previousLayer);
 
         hashFactor = outputSize;
         bParams = new Learnable[this.Y.length];
+        wParamsOf = new HashMap<>();
 
+        buildBiases();
+        buildWeights();
+    }
+
+    public WeightedLayer(WeightedLayer weightedLayer, Layer previousLayer) {
+        super(weightedLayer.X.length, weightedLayer.Y.length, previousLayer);
+
+        hashFactor = weightedLayer.hashFactor;
+        bParams = weightedLayer.bParams;
+        wParamsOf = weightedLayer.wParamsOf;
+    }
+
+    abstract public WeightedLayer copy(Layer lastLayer);
+
+    public void buildBiases() {
         for(int i = 0;i < bParams.length; i++) {
             bParams[i] = new Learnable(Math.random());
         }
+    }
 
-        wParamsOf = new HashMap<>();
-
+    public void buildWeights() {
         for(int destination=0;destination<Y.length;destination++) {
             NumberGenerator generator = Y[destination].getBackwardNeurons();
             Integer source;
@@ -95,18 +111,22 @@ public abstract class WeightedLayer extends Layer {
         }
     }
 
-    private long hash(int source, int destination) {
+    protected long hash(int source, int destination) {
         return source * hashFactor + destination;
     }
 
-    public void load(Vector[] w, Vector b) {
+    public void load(Vector[] w, Vector b, int offset) {
         int outputSize = w.length;
         int inputSize = w[0].size();
 
         for(int i=0;i<inputSize;i++) {
             for(int j=0;j<outputSize;j++) {
-                wParamsOf.get(hash(i, j)).setValue(w[j].x(i));
+                wParamsOf.get(hash(i + offset, j)).setValue(w[j].x(i));
             }
+        }
+
+        if(b == null) {
+            return; // stop here!
         }
 
         for(int i=0;i<outputSize;i++) {

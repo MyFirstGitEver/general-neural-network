@@ -1,14 +1,18 @@
 package org.example.layers;
 
-import org.example.Pair;
 import org.example.activators.Activator;
-import org.example.chooser.SequentialGenerator;
-import org.example.layers.denselayer.activation.ActivationLayer;
+import org.example.chooser.numbergenerators.SequentialGenerator;
+import org.example.layers.activation.ActivationLayer;
 import org.example.networks.Neuron;
 
 public class OneToOneActivationLayer extends ActivationLayer {
     public OneToOneActivationLayer(int inputSize, int outputSize, Layer previousLayer, Activator activator) {
         super(inputSize, outputSize, previousLayer, activator);
+    }
+
+    @Override
+    public ActivationLayer copy(Layer lastLayer) {
+        return new OneToOneActivationLayer(X.length, Y.length, lastLayer, activator);
     }
 
     @Override

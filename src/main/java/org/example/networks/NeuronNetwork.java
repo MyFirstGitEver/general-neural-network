@@ -1,9 +1,9 @@
 package org.example.networks;
 
 import org.example.Vector;
-import org.example.chooser.Concater;
-import org.example.chooser.OutputChooser;
-import org.example.layers.CompleteEdgeLayer;
+import org.example.chooser.concaters.Concater;
+import org.example.chooser.outputchoosers.OutputChooser;
+import org.example.layers.CompleteForwarder;
 import org.example.loss.Loss;
 import org.example.neural.Matrix;
 import org.example.others.DataGetter;
@@ -11,7 +11,7 @@ import org.example.others.DataGetter;
 import java.io.BufferedReader;
 
 public class NeuronNetwork {
-    private final CompleteEdgeLayer[] edgeLayers;
+    private final CompleteForwarder[] edgeLayers;
     private final Loss loss;
 
     private final Concater concater;
@@ -23,7 +23,7 @@ public class NeuronNetwork {
     private final DataGetter<Vector> yGetter;
 
     public NeuronNetwork(
-            CompleteEdgeLayer[] edgeLayers,
+            CompleteForwarder[] edgeLayers,
             Loss loss,
             Concater concater,
             OutputChooser outputChooser,
@@ -59,14 +59,14 @@ public class NeuronNetwork {
         }
     }
 
-    public Vector[] getOutputs() {
-        Vector[] outputs = new Vector[outputChooser.count()];
+    public Vector[] getOutputs(int lastK) {
+        Vector[] outputs = new Vector[lastK];
 
-        int index = 0;
-        for(int i=0;i<edgeLayers.length;i++) {
+        int index = outputs.length - 1;
+        for(int i = edgeLayers.length - 1;i>=0 && index >= 0;i--) {
             if(outputChooser.choose(i)) {
                 outputs[index] = edgeLayers[i].getFinalOutput();
-                index++;
+                index--;
             }
         }
 
@@ -95,7 +95,7 @@ public class NeuronNetwork {
                     }
                 }
 
-                for(CompleteEdgeLayer edgeLayer : edgeLayers) {
+                for(CompleteForwarder edgeLayer : edgeLayers) {
                     edgeLayer.update(learningRate, outputChooser.count(), xGetter.size());
                 }
             }
@@ -105,13 +105,17 @@ public class NeuronNetwork {
     }
 
     public void clip() {
-        for (CompleteEdgeLayer edgeLayer : edgeLayers) {
+        for (CompleteForwarder edgeLayer : edgeLayers) {
             edgeLayer.clip();
         }
     }
 
-    public void loadTestingToLayer(Vector[] W, Vector B, int layerId) {
-        edgeLayers[layerId].load(W, B);
+    public void loadTestingToLayer(Vector[] W, Vector B, int layerId, int offset) {
+        edgeLayers[layerId].load(W, B, offset);
+    }
+
+    public int outputCount() {
+        return outputChooser.count();
     }
 
     private boolean valid(String line) {
@@ -156,17 +160,21 @@ public class NeuronNetwork {
 
     private void backward(Vector[] inputs, Vector label) throws Exception {
         forward(inputs);
-        Vector[] outputs = getOutputs();
 
-        Vector firstEigenDeltas = new Vector(outputs[0].size());
-        for(Vector output : outputs) {
-            firstEigenDeltas.add(loss.dA(output, label));
+        for(int source = edgeLayers.length - 1;source>=0;source--) {
+            if(!outputChooser.choose(source)) {
+                continue;
+            }
+
+            Vector output = edgeLayers[source].getFinalOutput();
+            Vector firstEigenDeltas = loss.dA(output, label);
+
+            edgeLayers[source].setEigenDeltas(firstEigenDeltas);
+
+            for(int j = source; j >= 0;j--) {
+                edgeLayers[j].backward();
+            }
         }
 
-        edgeLayers[edgeLayers.length - 1].setEigenDeltaForLast(firstEigenDeltas);
-
-        for(int i = edgeLayers.length - 1; i >= 0;i--) {
-            edgeLayers[i].backward();
-        }
     }
 }

@@ -1,11 +1,12 @@
-package org.example.layers.denselayer.activation;
+package org.example.layers.activation;
 
-import org.example.chooser.NumberGenerator;
+import org.example.chooser.numbergenerators.NumberGenerator;
 import org.example.layers.Layer;
 import org.example.activators.Activator;
+import org.example.layers.weighted.WeightedLayer;
 import org.example.networks.Neuron;
 public abstract class ActivationLayer extends Layer {
-    private final Activator activator;
+    protected final Activator activator;
 
     public ActivationLayer(int inputSize, int outputSize, Layer previousLayer, Activator activator) {
         super(inputSize, outputSize, previousLayer);
@@ -40,4 +41,6 @@ public abstract class ActivationLayer extends Layer {
             previousLayer.getEigenDelta()[i] = total;
         }
     }
+
+    abstract public ActivationLayer copy(Layer lastLayer);
 }
