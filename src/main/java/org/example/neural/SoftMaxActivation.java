@@ -29,29 +29,19 @@ public class SoftMaxActivation extends ActivationFunction {
     }
 
     @Override
-    public Vector derivativeByZ(Vector z, Vector y) {
-        int subscript = -1;
-        double mainA = -1;
-
+    public Vector derivativeByZ(Vector z, int zIndex) {
         Vector a = out(z);
+        Vector dz = new Vector(a.size());
 
-        for(int i=0;i<y.size();i++) {
-            if(y.x(i) == 1) {
-                subscript = i;
-                mainA = a.x(i);
-                break;
-            }
-        }
-
-        for(int i=0;i<a.size();i++) {
-            if(i == subscript) {
-                a.setX(i, mainA * (1 - mainA));
+        for(int i=0;i<dz.size();i++) {
+            if(i == zIndex) {
+                dz.setX(i, a.x(i) * (1 - a.x(i)));
             }
             else {
-                a.setX(i, - mainA * a.x(i));
+                dz.setX(i, - a.x(i) * a.x(zIndex));
             }
         }
 
-        return a;
+        return dz;
     }
 }

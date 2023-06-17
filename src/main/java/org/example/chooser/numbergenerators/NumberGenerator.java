@@ -1,6 +1,8 @@
 package org.example.chooser.numbergenerators;
 
-public abstract class NumberGenerator {
+import java.io.Serializable;
+
+public abstract class NumberGenerator implements Serializable {
     protected final int targetValue;
     protected final int from;
     protected int currentValue;
@@ -18,6 +20,10 @@ public abstract class NumberGenerator {
 
     public void reverse() {
         currentValue = targetValue - 1;
+    }
+
+    public void reset() {
+        currentValue = from;
     }
 
     public abstract Integer next();

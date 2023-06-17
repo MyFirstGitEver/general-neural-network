@@ -3,46 +3,6 @@ package org.example.neural;
 import org.example.Pair;
 import org.example.Vector;
 
-abstract class ActivationFunction {
-    protected final int featureSize;
-    protected final int neurons;
-
-    ActivationFunction(int featureSize, int neurons) {
-        this.featureSize = featureSize;
-        this.neurons = neurons;
-    }
-
-    abstract Vector out(Vector z);
-    abstract Vector derivativeByZ(Vector z, Vector y);
-
-    Vector[] getW() {
-        Vector[] W = new Vector[neurons];
-
-        for(int i=0;i<W.length;i++) {
-            W[i] = new Vector(featureSize);
-            W[i].randomise(1.0);
-        }
-
-        return W;
-    }
-
-    Vector getB() {
-        Vector b = new Vector(neurons);
-        b.randomise(1.0);
-
-        return b;
-    }
-    Vector z(Vector[] W, Vector B, Vector v) {
-        double[] points = new double[neurons];
-
-        for(int i=0;i<neurons;i++) {
-            points[i] = W[i].dot(v) + B.x(i);
-        }
-
-        return new Vector(points);
-    }
-}
-
 public class DenseLayer {
     private final ActivationFunction function;
 
@@ -96,8 +56,8 @@ public class DenseLayer {
         }
     }
 
-    public Vector derivativeByZ(Vector Z, Vector y) {
-        return function.derivativeByZ(Z, y);
+    public Vector derivativeByZ(Vector Z, int zIndex) {
+        return function.derivativeByZ(Z, zIndex);
     }
 
     public Matrix transposeOfW() {

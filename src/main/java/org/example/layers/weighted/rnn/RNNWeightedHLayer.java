@@ -30,7 +30,7 @@ public class RNNWeightedHLayer extends WeightedLayer {
     }
 
     @Override
-    public void buildXYRelations(Neuron[] X, Neuron[] Y) {
+    protected void buildXYRelations(Neuron[] X, Neuron[] Y, int... args) {
         for(int i=ySize;i<X.length;i++) {
             X[i].setForwardNeurons(new SequentialGenerator(0, Y.length));
         }

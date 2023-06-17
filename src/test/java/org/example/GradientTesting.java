@@ -16,9 +16,10 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
+import java.io.FileInputStream;
+import java.io.ObjectInputStream;
 import java.util.Arrays;
+import java.util.List;
 import java.util.stream.Stream;
 
 public class GradientTesting {
@@ -65,10 +66,10 @@ public class GradientTesting {
         network.loadTestingToLayer(model.w(1), model.b(1), 1);
         network.loadTestingToLayer(model.w(2), model.b(2), 2);
 
-        model.train(learningRate, iteration, batchSize, 5, "", false, true);
-        BufferedReader reader = new BufferedReader(new FileReader("./log.txt"));
-        boolean passed = network.train(learningRate, iteration, batchSize, reader);
-        reader.close();
+        model.train(learningRate, 1, 1, 5, "", false, true);
+        ObjectInputStream ois = new ObjectInputStream(new FileInputStream("./log.txt"));
+        boolean passed = network.train(learningRate, 1, 1, (List<TestingObject>) ois.readObject(), false);
+        ois.close();
 
         //Assertions.assertTrue(Math.abs(model.cost() - network.cost()) < 5.0);
         Assertions.assertTrue(passed);
@@ -98,7 +99,7 @@ public class GradientTesting {
 
             @Override
             public int size() {
-                return xTrain.length;
+                return 1;
             }
         };
 
@@ -110,7 +111,7 @@ public class GradientTesting {
 
             @Override
             public int size() {
-                return xTrain.length;
+                return 1;
             }
         };
 

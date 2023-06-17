@@ -19,13 +19,11 @@ public class TanhActivation extends ActivationFunction {
     }
 
     @Override
-    public Vector derivativeByZ(Vector z, Vector y) {
+    public Vector derivativeByZ(Vector z, int aPos) {
         Vector a = new Vector(z.size());
 
-        for(int i=0;i<a.size();i++) {
-            double sig = sigmoid(2 * z.x(i));
-            a.setX(i, 4 * sig * (1 - sig));
-        }
+        double sig = sigmoid(2 * z.x(aPos));
+        a.setX(aPos, 4 * sig * (1 - sig));
 
         return a;
     }

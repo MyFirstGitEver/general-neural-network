@@ -1,8 +1,9 @@
 package org.example;
 
+import java.io.Serializable;
 import java.util.Arrays;
 
-public class Vector {
+public class Vector implements Serializable {
     private double[] points;
 
     public Vector(double... points) {

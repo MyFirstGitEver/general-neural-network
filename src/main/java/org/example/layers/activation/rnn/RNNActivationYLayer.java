@@ -9,31 +9,32 @@ import org.example.networks.Neuron;
 
 public class RNNActivationYLayer extends ActivationLayer {
     private final int ySize;
-
     private final int hSize;
 
-    public RNNActivationYLayer(int inputSize, int outputSize, int ySize, int hSize,
-                               Layer previousLayer, Activator activator) {
-        super(inputSize, outputSize, previousLayer, activator);
+    public RNNActivationYLayer(int inputSize, int outputSize, Layer previousLayer, Activator activator, int... args) {
+        super(inputSize, outputSize, previousLayer, activator, args);
 
-        this.ySize = ySize;
-        this.hSize = hSize;
+        this.ySize = args[0];
+        this.hSize = args[1];
     }
 
     @Override
-    public void buildXYRelations(Neuron[] X, Neuron[] Y) {
+    protected void buildXYRelations(Neuron[] X, Neuron[] Y, int... args) {
+        int ySize = args[0];
+        int hSize = args[1];
+
         for(int i=0;i<ySize;i++) {
             X[i].setForwardNeurons(new SequentialGenerator(0, ySize));
             Y[i].setBackwardNeurons(new SequentialGenerator(0, ySize));
         }
 
         for(int i=ySize;i<ySize + hSize;i++) {
-            X[i].setForwardNeurons(new SequentialGenerator(i, i + 1));
+            Y[i].setBackwardNeurons(new SequentialGenerator(i, i + 1));
         }
     }
 
     @Override
     public ActivationLayer copy(Layer lastLayer) {
-        return new RNNActivationYLayer(X.length, Y.length, ySize, hSize, lastLayer, activator);
+        return new RNNActivationYLayer(X.length, Y.length, lastLayer, activator, ySize, hSize);
     }
 }

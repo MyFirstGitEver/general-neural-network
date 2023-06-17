@@ -1,12 +1,12 @@
 package org.example;
 
-import org.example.activators.FeedForwardLinearActivator;
 import org.example.activators.FeedForwardSoftmaxActivator;
 import org.example.activators.FeedforwardReluActivator;
 import org.example.loss.MSE;
 import org.example.networks.FeedforwardNetwork;
 import org.example.neural.*;
 import org.example.activators.Activator;
+
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;

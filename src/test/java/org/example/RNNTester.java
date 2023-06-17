@@ -1,6 +1,12 @@
 package org.example;
 
+import org.example.chooser.numbergenerators.BackwardGenerator;
 import org.example.neural.*;
+
+import java.io.FileOutputStream;
+import java.io.ObjectOutputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 public class RNNTester {
     private final TanhActivation tanhActivation;
@@ -16,12 +22,12 @@ public class RNNTester {
     private final Matrix dWhx, dWhh, dWyh;
     private final Vector dbh, dby;
 
-    private final int layers;
+    private final int timeStep;
 
-    public RNNTester(int inputSize, int outputSize, int priorKnowledgeSize, int layers) {
+    public RNNTester(int inputSize, int outputSize, int priorKnowledgeSize, int timeStep) {
         this.priorKnowledgeSize = priorKnowledgeSize;
 
-        double scaleFactor = 0.1;
+        double scaleFactor = 3.0;
 
         Whx = new Matrix(priorKnowledgeSize, inputSize);
         dWhx = new Matrix(priorKnowledgeSize, inputSize);
@@ -47,7 +53,7 @@ public class RNNTester {
         softMaxActivation = new SoftMaxActivation(priorKnowledgeSize, outputSize);
         loss = new CrossEntropy();
 
-        this.layers = layers;
+        this.timeStep = timeStep;
     }
 
     public Matrix getWhx() {
@@ -94,6 +100,7 @@ public class RNNTester {
         Vector[] Y = new Vector[input.length];
         Vector[] H = new Vector[input.length + 1];
         Vector[] ZY = new Vector[input.length];
+        Vector[] ZH = new Vector[input.length];
 
         //feedforward
         H[0] = new Vector(priorKnowledgeSize);
@@ -103,14 +110,14 @@ public class RNNTester {
             Vector[] term1 = Whx.mul(new Matrix(v, true));
             Vector[] term2 = Whh.mul(new Matrix(H[i], true));
 
-            Vector zh = new Vector(term1).add(new Vector(term2)).add(bh);
-            H[i + 1] = tanhActivation.out(zh);
+            ZH[i] = new Vector(term1).add(new Vector(term2)).add(bh);
+            H[i + 1] = tanhActivation.out(ZH[i]);
 
             ZY[i] = new Vector(Wyh.mul(new Matrix(H[i + 1], true))).add(by);
             Y[i] = softMaxActivation.out(ZY[i]);
         }
 
-        dWyh(label, Y, H, ZY, input.length);
+        dW(label, Y, H, ZY, ZH, input, input.length);
     }
 
     public Matrix getdWhx() {
@@ -133,17 +140,64 @@ public class RNNTester {
         return dby;
     }
 
-    private void dWyh(Vector label, Vector[] Y, Vector[] H, Vector[] ZY, int inputLength) throws Exception {
-        for(int i=0;i<inputLength;i++) {
-            Vector error =
-                    loss.derivativeByA(Y[i], label).hadamard(softMaxActivation.derivativeByZ(ZY[i], label));
+    private void dW(Vector label,
+                    Vector[] Y,
+                    Vector[] H,
+                    Vector[] ZY,
+                    Vector[] ZH,
+                    Vector[] input, int inputLength) throws Exception {
+        for(int source=inputLength - 1;source>=0;source--) {
+            Vector dz = error(ZY[source], loss.derivativeByA(Y[source], label), softMaxActivation);
 
-            Matrix matError = new Matrix(error, true);
-            Vector[] gradientW = matError.mul(new Matrix(H[i + 1], false));
+            Matrix matError = new Matrix(dz, true);
+            Vector[] gradientWyh = matError.mul(new Matrix(H[source + 1], false));
+            dWyh.add(gradientWyh);
+            dby.add(dz);
 
-            dWyh.add(gradientW);
+            Vector nextError = new Vector(Matrix.transpose(Wyh.vectorize(true)).mul(matError));
+
+            for(int i=source;i>=0;i--) {
+                nextError = error(ZH[i],nextError, tanhActivation);
+
+                matError = new Matrix(nextError, true);
+                Vector[] gradientWhh = matError.mul(new Matrix(H[source], false));
+                dWhh.add(gradientWhh);
+
+                Vector[] gradientWhx = matError.mul(new Matrix(input[source], false));
+                dWhx.add(gradientWhx);
+
+                dbh.add(nextError);
+
+                nextError = new Vector(Matrix.transpose(Whh.vectorize(true)).mul(matError));
+            }
         }
 
-        dWyh.normalizeByRow();
+        log();
+    }
+
+    private void log() throws Exception {
+        List<TestingObject> tests = new ArrayList<>(1);
+
+        tests.add(new TestingObject(new Matrix[] {
+                dWyh,
+                dWhh.concatToLeft(dWhx)
+        }, new Vector[] {
+                dby,
+                dbh
+        }, new int[] { 0,  by.size()}, new BackwardGenerator(1, -1)));
+
+        ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream("./log.txt"));
+        oos.writeObject(tests);
+        oos.close();
+    }
+
+    private Vector error(Vector z, Vector dLdA, ActivationFunction activationFunction) {
+        Vector result = new Vector(z.size());
+
+        for(int i=0;i<result.size();i++) {
+            result.setX(i, dLdA.hadamard(activationFunction.derivativeByZ(z, i)).sum());
+        }
+
+        return result;
     }
 }

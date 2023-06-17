@@ -24,7 +24,7 @@ public abstract class Layer {
 
     protected final Layer previousLayer;
 
-    public Layer(int inputSize, int outputSize, Layer previousLayer) {
+    public Layer(int inputSize, int outputSize, Layer previousLayer, int... args) {
         if(previousLayer != null) {
             X = previousLayer.Y;
         }
@@ -41,7 +41,7 @@ public abstract class Layer {
             Y[i] = new Neuron(0);
         }
 
-        buildXYRelations(X, Y);
+        buildXYRelations(X, Y, args);
 
         this.previousLayer = previousLayer;
         this.eigenDelta = new double[this.Y.length];
@@ -49,7 +49,7 @@ public abstract class Layer {
 
     abstract public void forward();
     abstract public void backward();
-    abstract public void buildXYRelations(Neuron[] X, Neuron[] Y);
+    abstract protected void buildXYRelations(Neuron[] X, Neuron[] Y, int... args);
 
     public Neuron[] getX() {
         return X;

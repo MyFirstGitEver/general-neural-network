@@ -1,9 +1,10 @@
 package org.example.networks;
 
+import org.example.TestingObject;
 import org.example.Vector;
 import org.example.activators.FeedForwardSoftmaxActivator;
 import org.example.chooser.concaters.Concater;
-import org.example.chooser.outputchoosers.OutputChooser;
+import org.example.chooser.outputchoosers.OutputProcessor;
 import org.example.layers.CompleteForwarder;
 import org.example.layers.Layer;
 import org.example.loss.Loss;
@@ -11,6 +12,7 @@ import org.example.activators.Activator;
 import org.example.others.DataGetter;
 
 import java.io.BufferedReader;
+import java.util.List;
 
 public class FeedforwardNetwork {
     private final NeuronNetwork model;
@@ -44,10 +46,15 @@ public class FeedforwardNetwork {
             }
         };
 
-        model = new NeuronNetwork(layers, loss, new Concater(), new OutputChooser() {
+        model = new NeuronNetwork(layers, loss, new Concater(), new OutputProcessor() {
             @Override
             public boolean choose(int i) {
                 return (i == activators.length - 1);
+            }
+
+            @Override
+            public Vector preprocess(Vector output) {
+                return output;
             }
 
             @Override
@@ -63,8 +70,8 @@ public class FeedforwardNetwork {
         return model.getOutputs(1)[0];
     }
 
-    public boolean train(double learningRate, int iteration, int batchSize, BufferedReader reader) throws Exception {
-        return model.train(learningRate, iteration, batchSize, reader);
+    public boolean train(double learningRate, int iteration, int batchSize, List<TestingObject> tests, boolean printCost) throws Exception {
+        return model.train(learningRate, iteration, batchSize, 10, tests, printCost);
     }
 
     public void loadTestingToLayer(Vector[] W, Vector B, int layerId) {
@@ -78,5 +85,9 @@ public class FeedforwardNetwork {
         }
 
         return CompleteForwarder.Builder.buildDenseOne(inputSize, outputSize, activator, lastLayer);
+    }
+
+    public double cost() throws Exception {
+        return model.cost();
     }
 }

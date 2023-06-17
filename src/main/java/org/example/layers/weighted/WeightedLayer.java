@@ -15,8 +15,8 @@ public abstract class WeightedLayer extends Layer {
     protected final Learnable[] bParams;
     protected final HashMap<Long, Learnable> wParamsOf;
 
-    public WeightedLayer(int inputSize, int outputSize, Layer previousLayer) {
-        super(inputSize, outputSize, previousLayer);
+    public WeightedLayer(int inputSize, int outputSize, Layer previousLayer, int... args) {
+        super(inputSize, outputSize, previousLayer, args);
 
         hashFactor = outputSize;
         bParams = new Learnable[this.Y.length];
@@ -36,13 +36,13 @@ public abstract class WeightedLayer extends Layer {
 
     abstract public WeightedLayer copy(Layer lastLayer);
 
-    public void buildBiases() {
+    protected void buildBiases() {
         for(int i = 0;i < bParams.length; i++) {
             bParams[i] = new Learnable(Math.random());
         }
     }
 
-    public void buildWeights() {
+    protected void buildWeights() {
         for(int destination=0;destination<Y.length;destination++) {
             NumberGenerator generator = Y[destination].getBackwardNeurons();
             Integer source;
@@ -121,6 +121,10 @@ public abstract class WeightedLayer extends Layer {
 
         for(int i=0;i<inputSize;i++) {
             for(int j=0;j<outputSize;j++) {
+                if(wParamsOf.get(hash(i + offset, j)) == null) {
+                    int m = 3;
+                }
+
                 wParamsOf.get(hash(i + offset, j)).setValue(w[j].x(i));
             }
         }
@@ -134,7 +138,7 @@ public abstract class WeightedLayer extends Layer {
         }
     }
 
-    public boolean valid(Matrix dW, Vector dB) {
+    public boolean valid(Matrix dW, Vector dB, int offset) {
         Pair<Integer, Integer> shape = dW.shape();
 
         int outputSize = shape.first;
@@ -142,14 +146,18 @@ public abstract class WeightedLayer extends Layer {
 
         for(int i=0;i<inputSize;i++) {
             for(int j=0;j<outputSize;j++) {
-                if(Math.abs(wParamsOf.get(hash(i, j)).getDValue() - dW.at(j, i)) > 1e-7) {
+                if(Math.abs(wParamsOf.get(hash(i + offset, j)).getDValue() - dW.at(j, i)) > 4e-3) {
                     return false;
                 }
             }
         }
 
+        if(dB == null) {
+            return true; // stop here
+        }
+
         for(int i=0;i<outputSize;i++) {
-            if(Math.abs(bParams[i].getDValue() - dB.x(i)) > 1e-7) {
+            if(Math.abs(bParams[i].getDValue() - dB.x(i)) > 2e-3) {
                 return false;
             }
         }

@@ -16,7 +16,7 @@ public class DenseActivationLayer extends ActivationLayer {
     }
 
     @Override
-    public void buildXYRelations(Neuron[] X, Neuron[] Y) {
+    public void buildXYRelations(Neuron[] X, Neuron[] Y, int... args) {
         Layer.EdgeBuilder.buildDense(Y, X);
     }
 }

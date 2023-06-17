@@ -3,7 +3,10 @@ package org.example.neural;
 import org.example.Pair;
 import org.example.Vector;
 
-public class Matrix {
+import java.io.Serializable;
+import java.util.Arrays;
+
+public class Matrix implements Serializable {
     private final double[][] entries;
 
     public Matrix(String data) {
@@ -254,5 +257,29 @@ public class Matrix {
         }
 
         return builder.toString();
+    }
+
+    public Matrix concatToLeft(Matrix mat) throws Exception {
+        Pair<Integer, Integer> shape = mat.shape();
+
+        int m = entries.length;
+        int n = entries[0].length;
+
+        if(shape.first != m) {
+            throw new Exception("Can't concat since the two does not have same row dimensions");
+        }
+
+        int newN = n + shape.second;
+
+        double[][] newMat = new double[m][newN];
+        for(int i=0;i<m;i++) {
+            System.arraycopy(entries[i], 0, newMat[i], 0, n);
+
+            for(int j=n;j<newN;j++) {
+                newMat[i][j] = mat.entries[i][j - n];
+            }
+        }
+
+        return new Matrix(newMat);
     }
 }

@@ -9,67 +9,64 @@ import org.example.networks.Neuron;
 import org.example.others.Learnable;
 
 public class RNNWeightedYLayer extends WeightedLayer {
-    private final int ySize;
-
-    public RNNWeightedYLayer(
-            int inputSize,
-            int outputSize,
-            Layer previousLayer,
-            int ySize) {
+    public RNNWeightedYLayer(int inputSize, int outputSize, Layer previousLayer) {
         super(inputSize, outputSize, previousLayer);
-
-        this.ySize = ySize;
     }
 
-    public RNNWeightedYLayer(WeightedLayer weightedLayer, Layer previousLayer, int ySize) {
+    public RNNWeightedYLayer(WeightedLayer weightedLayer, Layer previousLayer) {
         super(weightedLayer, previousLayer);
-
-        this.ySize = ySize;
     }
 
     @Override
-    public void buildXYRelations(Neuron[] X, Neuron[] Y) {
-        for(int i=0;i<X.length;i++) {
-            X[i].setForwardNeurons(new NPlusKGenerator(0, ySize, ySize + (i + 1)));
+    protected void buildXYRelations(Neuron[] X, Neuron[] Y, int... args) {
+        int ySize = Y.length - X.length;
+
+        for (Neuron x : X) {
+            x.setForwardNeurons(new SequentialGenerator(0, ySize));
         }
 
         for(int i=0;i<ySize;i++) {
             Y[i].setBackwardNeurons(new SequentialGenerator(0, X.length));
         }
+
+        for(int i=ySize;i<Y.length;i++) {
+            Y[i].setBackwardNeurons(new SequentialGenerator(i - ySize, i - ySize + 1));
+        }
     }
 
     @Override
-    public void buildWeights() {
-        for(int destination=0;destination<Y.length;destination++) {
+    protected void buildWeights() {
+        int ySize = Y.length - X.length;
+
+        for(int destination=0;destination<ySize;destination++) {
             NumberGenerator generator = Y[destination].getBackwardNeurons();
-
-            if(destination >= ySize) {
-                wParamsOf.put(hash(generator.next(), destination), new Learnable(1.0));
-                continue;
-            }
-
             Integer source;
 
             while((source = generator.next()) != null) {
                 wParamsOf.put(hash(source, destination), new Learnable(Math.random()));
             }
         }
+
+        for(int destination=ySize;destination< Y.length;destination++) {
+            wParamsOf.put(hash(destination - ySize, destination), new Learnable(1.0));
+        }
+    }
+
+    @Override
+    protected void buildBiases() {
+        int ySize = Y.length - X.length;
+
+        for(int i = 0;i < ySize; i++) {
+            bParams[i] = new Learnable(Math.random());
+        }
+
+        for(int i=ySize;i<bParams.length;i++) {
+            bParams[i] = new Learnable(0.0);
+        }
     }
 
     @Override
     public WeightedLayer copy(Layer lastLayer) {
-        return new RNNWeightedYLayer(this, lastLayer, ySize);
-    }
-
-    @Override
-    public void buildBiases() {
-        for(int i = 0;i < bParams.length; i++) {
-            if(i >= ySize) {
-                bParams[i] = new Learnable(0.0);
-            }
-            else {
-                bParams[i] = new Learnable(Math.random());
-            }
-        }
+        return new RNNWeightedYLayer(this, lastLayer);
     }
 }

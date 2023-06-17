@@ -26,7 +26,10 @@ public class CompleteForwarder {
                 throws Exception {
 
             DenseWeightedLayer weightedLayer = new DenseWeightedLayer(inputSize, outputSize, lastLayer);
-            DenseActivationLayer activationLayer = new DenseActivationLayer(outputSize, outputSize, weightedLayer, activator);
+            DenseActivationLayer activationLayer = new DenseActivationLayer(
+                    outputSize,
+                    outputSize,
+                    weightedLayer ,activator);
 
             return new CompleteForwarder(weightedLayer, activationLayer);
         }
@@ -50,10 +53,15 @@ public class CompleteForwarder {
 
             WeightedLayer weightedLayer = new RNNWeightedHLayer(
                     inputSize + priorKnowledgeSize + outputSize,
-                    priorKnowledgeSize, null, outputSize);
+                    priorKnowledgeSize,
+                    null,
+                    outputSize);
 
             ActivationLayer activationLayer =
-                    new OneToOneActivationLayer(priorKnowledgeSize, priorKnowledgeSize, weightedLayer,
+                    new OneToOneActivationLayer(
+                            priorKnowledgeSize,
+                            priorKnowledgeSize,
+                            weightedLayer,
                             new FeedforwardTanhActivator());
 
             return new CompleteForwarder(weightedLayer, activationLayer);
@@ -65,15 +73,13 @@ public class CompleteForwarder {
                 ActivationLayer hActivationLayer) throws Exception {
 
             WeightedLayer weightedLayer = new RNNWeightedYLayer(
-                    priorKnowledgeSize, priorKnowledgeSize + outputSize, hActivationLayer, outputSize);
+                    priorKnowledgeSize, priorKnowledgeSize + outputSize, hActivationLayer);
 
             ActivationLayer activationLayer = new RNNActivationYLayer(
                     priorKnowledgeSize + outputSize,
                     priorKnowledgeSize + inputSize + outputSize,
-                    outputSize,
-                    priorKnowledgeSize,
                     weightedLayer,
-                    new RNNSoftmaxActivator());
+                    new RNNSoftmaxActivator(), outputSize, priorKnowledgeSize);
 
             return new CompleteForwarder(weightedLayer, activationLayer);
         }
@@ -106,12 +112,8 @@ public class CompleteForwarder {
         weightedLayer.update(learningRate, outputCount, datasetSize);
     }
 
-    public void setEigenDeltas(Vector eigenDeltaForLast) throws Exception {
-        if(eigenDeltaForLast.size() != activationLayer.eigenDelta.length) {
-            throw new Exception("Eigen delta vector does fit with the edge layer's activation layer");
-        }
-
-        for(int i = 0; i< activationLayer.eigenDelta.length; i++) {
+    public void setEigenDeltas(Vector eigenDeltaForLast) {
+        for(int i = 0; i< eigenDeltaForLast.size(); i++) {
             activationLayer.eigenDelta[i] = eigenDeltaForLast.x(i);
         }
     }
@@ -146,8 +148,8 @@ public class CompleteForwarder {
         return activationLayer;
     }
 
-    public boolean valid(Matrix dW, Vector dB) {
-        return weightedLayer.valid(dW, dB);
+    public boolean valid(Matrix dW, Vector dB, int offset) {
+        return weightedLayer.valid(dW, dB, offset);
     }
 
     public CompleteForwarder sharedLayersForwarder(Layer lastLayer) throws Exception {

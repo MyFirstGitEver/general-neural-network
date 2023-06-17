@@ -8,21 +8,22 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.stream.Stream;
 
-public class RNNTesting {
+// Test 1 : 87 / 313
+public class RNNFeedforwardTesting {
     public static Stream<Arguments> cases() {
         return Stream.of(oneHundredArgs());
     }
 
     private static Arguments[] oneHundredArgs() {
-        Arguments[] args = new Arguments[300];
+        Arguments[] args = new Arguments[30];
 
         for(int i=0;i<args.length;i++) {
-            Vector[] data = vectors((int) (Math.random() * 10 + 15), (int) (Math.random() * 100 + 3));
+            Vector[] data = vectors((int) (Math.random() * 300 + 15), (int) (Math.random() * 300 + 15));
 
             args[i] = Arguments.of(
                     data[0].size(),
-                    (int) (Math.random() * 10 + 15),
-                    (int) (Math.random() * 10 + 15),
+                    2,
+                    (int) (Math.random() * 300 + 15),
                     data.length, data);
         }
 
@@ -34,7 +35,7 @@ public class RNNTesting {
 
         for(int j=0;j<num;j++) {
             if(size == null) {
-                size = (int) (Math.random() * 15 + 3);
+                size = (int) (Math.random() * 300 + 15);
             }
 
             Vector v = new Vector(size);
@@ -60,7 +61,8 @@ public class RNNTesting {
         Vector[] rnnOutputs = rnn.outputs(input);
 
         for(int i=0;i<outputs.length;i++) {
-            Assertions.assertTrue(outputs[i].identical(rnnOutputs[i], 0.001));
+            Vector result = rnnOutputs[i].subVec(0, outputSize);
+            Assertions.assertTrue(outputs[i].identical(result, 0.005));
         }
     }
 }

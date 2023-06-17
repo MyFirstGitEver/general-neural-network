@@ -13,7 +13,7 @@ public class DenseWeightedLayer extends WeightedLayer {
     }
 
     @Override
-    public void buildXYRelations(Neuron[] X, Neuron[] Y) {
+    protected void buildXYRelations(Neuron[] X, Neuron[] Y, int... args) {
         Layer.EdgeBuilder.buildDense(Y, X);
     }
 

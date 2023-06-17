@@ -16,7 +16,7 @@ public class OneToOneActivationLayer extends ActivationLayer {
     }
 
     @Override
-    public void buildXYRelations(Neuron[] X, Neuron[] Y) {
+    public void buildXYRelations(Neuron[] X, Neuron[] Y, int... args) {
         for(int i=0;i<X.length;i++) {
             X[i].setForwardNeurons(new SequentialGenerator(i, i + 1));
         }
