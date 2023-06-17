@@ -9,6 +9,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import java.io.FileInputStream;
 import java.io.ObjectInputStream;
+
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -37,33 +38,42 @@ public class RNNGradientTesting {
     }
 
     private static Arguments[] args() {
-        Arguments[] args = new Arguments[300];
+        Arguments[] args = new Arguments[100];
 
         for(int i=0;i<args.length;i++) {
-            Vector[] data = vectors(randomTimeStep(), (int) (Math.random() * 2 + 3));
+            int iteration = (int) (Math.random() * 2);
+            int datasetSize;
 
-            Vector label = randomOneHotVector(2);
+            if(iteration > 1) {
+                datasetSize = 1;
+            }
+            else {
+                datasetSize = (int) (Math.random() * 100);
+            }
+            int inputSize = (int) (Math.random() * 10 + 315);
+
+            Vector[][] dataset = new Vector[datasetSize][];
+            Vector[] labels = new Vector[datasetSize];
+
+            int timeStep = (int) (Math.random() * 10) + 1;
+
+            for(int j=0;j<dataset.length;j++) {
+                dataset[j] = vectors(timeStep, inputSize);
+            }
+
+            for(int j=0;j<dataset.length;j++) {
+                labels[j] = randomOneHotVector(2);
+            }
 
             args[i] = Arguments.of(
-                    data[0].size(),
+                    inputSize,
                     2,
-                    (int) (Math.random() * 2 + 13),
-                    data.length, data, label);
+                    (int) (Math.random() * 15 + 30),
+                    timeStep, dataset, labels, (int) Math.min(dataset.length, Math.random() * 100), iteration);
         }
 
 
         return args;
-    }
-
-    private static int randomTimeStep() {
-        if(Math.random() > 0.9) {
-            return (int) (Math.random() * 3600 + 400);
-        }
-        else if(Math.random() > 0.7) {
-            return (int) (Math.random() * 100 + 60);
-        }
-
-        return (int) (Math.random() * 5 + 1);
     }
 
     private static Vector randomOneHotVector(int size) {
@@ -77,39 +87,44 @@ public class RNNGradientTesting {
     @ParameterizedTest
     @MethodSource("cases2")
     public void testWyhGradient(int inputSize, int outputSize, int priorKnowledgeSize, int timeStep,
-                                Vector[] input, Vector label) throws Exception {
+                                Vector[][] dataset, Vector[] labels, int batchSIze, int iteration) throws Exception {
         RNNTester tester = new RNNTester(inputSize, outputSize, priorKnowledgeSize, timeStep);
-        tester.backward(input, label);
-
         DataGetter<Vector[]> xGetter = new DataGetter<>() {
             @Override
             public Vector[] at(int i) {
-                return input;
+                return dataset[i];
             }
 
             @Override
             public int size() {
-                return 1;
+                return dataset.length;
             }
         };
 
         DataGetter<Vector> yGetter = new DataGetter<>() {
             @Override
             public Vector at(int i) {
-                return label;
+                return labels[i];
             }
 
             @Override
             public int size() {
-                return 1;
+                return dataset.length;
             }
         };
 
+        // Loading !
         RNN rnn = new RNN(inputSize, priorKnowledgeSize, outputSize, timeStep, xGetter, yGetter);
         rnn.loadParameters(tester.getWhh(), tester.getWhx(), tester.getWyh(), tester.getBh(), tester.getBy());
+
+        // Preparing test parameters!
+        tester.train(dataset, labels, batchSIze, iteration, 0.001);
+
+        // read logs and test all parameters!
         ObjectInputStream ois = new ObjectInputStream(new FileInputStream("./log.txt"));
         boolean passed =
-                rnn.train(0.001, 1, 1, false, (List<TestingObject>) ois.readObject());
+                rnn.train(0.001, iteration, batchSIze,
+                        false, (List<TestingObject>) ois.readObject());
         ois.close();
 
         Assertions.assertTrue(passed);

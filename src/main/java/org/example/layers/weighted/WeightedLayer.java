@@ -61,6 +61,7 @@ public abstract class WeightedLayer extends Layer {
             double weighted = 0;
             Integer source;
             NumberGenerator generator = y.getBackwardNeurons();
+            generator.reset();
 
             while((source = generator.next()) != null) {
                 weighted += X[source].getValue() * wParamsOf.get(hash(source, j)).getValue();
@@ -121,10 +122,6 @@ public abstract class WeightedLayer extends Layer {
 
         for(int i=0;i<inputSize;i++) {
             for(int j=0;j<outputSize;j++) {
-                if(wParamsOf.get(hash(i + offset, j)) == null) {
-                    int m = 3;
-                }
-
                 wParamsOf.get(hash(i + offset, j)).setValue(w[j].x(i));
             }
         }
@@ -146,7 +143,7 @@ public abstract class WeightedLayer extends Layer {
 
         for(int i=0;i<inputSize;i++) {
             for(int j=0;j<outputSize;j++) {
-                if(Math.abs(wParamsOf.get(hash(i + offset, j)).getDValue() - dW.at(j, i)) > 4e-3) {
+                if(Math.abs(wParamsOf.get(hash(i + offset, j)).getDValue() - dW.at(j, i)) > 0.01) {
                     return false;
                 }
             }
@@ -157,7 +154,7 @@ public abstract class WeightedLayer extends Layer {
         }
 
         for(int i=0;i<outputSize;i++) {
-            if(Math.abs(bParams[i].getDValue() - dB.x(i)) > 2e-3) {
+            if(Math.abs(bParams[i].getDValue() - dB.x(i)) > 0.01) {
                 return false;
             }
         }

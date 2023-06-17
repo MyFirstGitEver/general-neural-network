@@ -14,46 +14,67 @@ public class RNNTester {
 
     private final SimpleNeuralNetwork.Loss loss;
 
-    private final int priorKnowledgeSize;
+    private final int priorKnowledgeSize, layers;
 
     private final Matrix Whx, Whh, Wyh;
+
     private final Vector bh, by;
 
     private final Matrix dWhx, dWhh, dWyh;
     private final Vector dbh, dby;
 
-    private final int timeStep;
+    private final Matrix firstWhx, firstWhh, firstWyh;
 
-    public RNNTester(int inputSize, int outputSize, int priorKnowledgeSize, int timeStep) {
+    private final Matrix secondWhx, secondWhh, secondWyh;
+
+    private final Vector firstBh, firstBy;
+
+    private final Vector secondBh, secondBy;
+
+    private final List<TestingObject> tests = new ArrayList<>();
+
+    private final static double beta = 0.9f;
+    private final static double beta2 = 0.999f;
+
+    public RNNTester(int inputSize, int outputSize, int priorKnowledgeSize, int layers) {
         this.priorKnowledgeSize = priorKnowledgeSize;
+        this.layers = layers;
 
         double scaleFactor = 3.0;
 
         Whx = new Matrix(priorKnowledgeSize, inputSize);
         dWhx = new Matrix(priorKnowledgeSize, inputSize);
+        firstWhx = new Matrix(priorKnowledgeSize, inputSize);
+        secondWhx = new Matrix(priorKnowledgeSize, inputSize);
         Whx.randomise(scaleFactor);
 
         Whh = new Matrix(priorKnowledgeSize, priorKnowledgeSize);
         dWhh = new Matrix(priorKnowledgeSize, priorKnowledgeSize);
+        firstWhh = new Matrix(priorKnowledgeSize, priorKnowledgeSize);
+        secondWhh = new Matrix(priorKnowledgeSize, priorKnowledgeSize);
         Whh.randomise(scaleFactor);
-
-        bh = new Vector(priorKnowledgeSize);
-        dbh = new Vector(priorKnowledgeSize);
-        bh.randomise(scaleFactor);
 
         Wyh = new Matrix(outputSize, priorKnowledgeSize);
         dWyh = new Matrix(outputSize, priorKnowledgeSize);
+        firstWyh = new Matrix(outputSize, priorKnowledgeSize);
+        secondWyh = new Matrix(outputSize, priorKnowledgeSize);
         Wyh.randomise(scaleFactor);
+
+        bh = new Vector(priorKnowledgeSize);
+        dbh = new Vector(priorKnowledgeSize);
+        firstBh = new Vector(priorKnowledgeSize);
+        secondBh = new Vector(priorKnowledgeSize);
+        bh.randomise(scaleFactor);
 
         by = new Vector(outputSize);
         dby = new Vector(outputSize);
+        firstBy = new Vector(outputSize);
+        secondBy = new Vector(outputSize);
         by.randomise(scaleFactor);
 
         tanhActivation = new TanhActivation(inputSize, priorKnowledgeSize);
         softMaxActivation = new SoftMaxActivation(priorKnowledgeSize, outputSize);
         loss = new CrossEntropy();
-
-        this.timeStep = timeStep;
     }
 
     public Matrix getWhx() {
@@ -96,6 +117,60 @@ public class RNNTester {
         return y;
     }
 
+    public void train(Vector[][] dataset, Vector[] labels, int batchSize, int trainCnt, double learningRate) throws Exception {
+        for (int trainCount = 0; trainCount < trainCnt; trainCount++) {
+            for (int i = 0; i < dataset.length; i += batchSize) {
+                int from = i;
+                int to = i + Math.min(batchSize, dataset.length - i) - 1;
+
+                dWyh.reset();
+                dWhh.reset();
+                dWhx.reset();
+                dby.reset();
+                dbh.reset();
+
+                for (int iteration = from; iteration <= to; iteration++) {
+                    backward(dataset[iteration], labels[iteration]);
+                }
+
+                addToLog();
+
+                dWyh.divideBy(layers * dataset.length);
+                dWhh.divideBy(layers * dataset.length);
+                dWhx.divideBy(layers * dataset.length);
+
+                dby.divideBy(layers * dataset.length);
+                dbh.divideBy(layers * dataset.length);
+
+                updateW(Wyh, firstWyh, secondWyh, dWyh, learningRate);
+                updateW(Whh, firstWhh, secondWhh, dWhh, learningRate);
+                updateW(Whx, firstWhx, secondWhx, dWhx, learningRate);
+
+                updateB(by, firstBy, secondBy, dby, learningRate);
+                updateB(bh, firstBh, secondBh, dbh, learningRate);
+            }
+        }
+
+        // write log to file
+        ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream("./log.txt"));
+        oos.writeObject(tests);
+        oos.close();
+    }
+
+    private void updateW(Matrix W, Matrix firstMoment, Matrix secondMoment, Matrix dW, double learningRate) throws Exception {
+        firstMoment.scale(beta).add(dW.copy().scale(1 - beta));
+        secondMoment.scale(beta2).add(dW.square().scale(1 - beta2));
+
+        W.selfSubtract(firstMoment.hadamardDivideCopy(secondMoment.sqrtCopy(), 10e-8f).scale(learningRate));
+    }
+
+    private void updateB(Vector B, Vector firstMoment, Vector secondMoment, Vector dB, double learningRate) throws Exception {
+        firstMoment.scaleBy(beta).add(dB.copy().scaleBy(1 - beta));
+        secondMoment.scaleBy(beta2).add(dB.square().scaleBy(1 - beta2));
+
+        B.subtract(firstMoment.divideCopy(secondMoment.sqrtCopy(), 10e-8f).scaleBy(learningRate));
+    }
+
     public void backward(Vector[] input, Vector label) throws Exception {
         Vector[] Y = new Vector[input.length];
         Vector[] H = new Vector[input.length + 1];
@@ -118,26 +193,6 @@ public class RNNTester {
         }
 
         dW(label, Y, H, ZY, ZH, input, input.length);
-    }
-
-    public Matrix getdWhx() {
-        return dWhx;
-    }
-
-    public Matrix getdWhh() {
-        return dWhh;
-    }
-
-    public Matrix getdWyh() {
-        return dWyh;
-    }
-
-    public Vector getDbh() {
-        return dbh;
-    }
-
-    public Vector getDby() {
-        return dby;
     }
 
     private void dW(Vector label,
@@ -171,24 +226,20 @@ public class RNNTester {
                 nextError = new Vector(Matrix.transpose(Whh.vectorize(true)).mul(matError));
             }
         }
-
-        log();
     }
 
-    private void log() throws Exception {
-        List<TestingObject> tests = new ArrayList<>(1);
+    private void addToLog() throws Exception {
+        Matrix dWyhCopy = dWyh.copy();
+        Vector dbyCopy = dby.copy();
+        Vector dbhCopy = dbh.copy();
 
         tests.add(new TestingObject(new Matrix[] {
-                dWyh,
-                dWhh.concatToLeft(dWhx)
+                dWyhCopy,
+                dWhh.concatToLeftCopy(dWhx)
         }, new Vector[] {
-                dby,
-                dbh
+                dbyCopy,
+                dbhCopy
         }, new int[] { 0,  by.size()}, new BackwardGenerator(1, -1)));
-
-        ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream("./log.txt"));
-        oos.writeObject(tests);
-        oos.close();
     }
 
     private Vector error(Vector z, Vector dLdA, ActivationFunction activationFunction) {

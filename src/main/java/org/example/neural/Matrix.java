@@ -4,7 +4,6 @@ import org.example.Pair;
 import org.example.Vector;
 
 import java.io.Serializable;
-import java.util.Arrays;
 
 public class Matrix implements Serializable {
     private final double[][] entries;
@@ -226,6 +225,55 @@ public class Matrix implements Serializable {
         }
     }
 
+    public Matrix hadamardDivideCopy(Matrix mat, double eps) throws Exception {
+        int m = entries.length;
+        int n = entries[0].length;
+
+        if(!sameShape(mat)) {
+            throw new Exception("Failed to divide!");
+        }
+
+        double[][] newMat = new double[m][n];
+
+        for(int i=0;i<m;i++) {
+            for(int j=0;j<n;j++) {
+                newMat[i][j] = entries[i][j] / (mat.at(i, j) + eps);
+            }
+        }
+
+        return new Matrix(newMat);
+    }
+
+    public void selfSubtract(Matrix mat) throws Exception {
+        int m = entries.length;
+        int n = entries[0].length;
+
+        if(!sameShape(mat)) {
+            throw new Exception("Failed to subtract!");
+        }
+
+        for(int i=0;i<m;i++) {
+            for(int j=0;j<n;j++) {
+                entries[i][j] -= mat.at(i, j);
+            }
+        }
+    }
+
+    public Matrix sqrtCopy() {
+        int m = entries.length;
+        int n = entries[0].length;
+
+        double[][] newMat = new double[m][n];
+
+        for(int i=0;i<m;i++) {
+            for(int j=0;j<n;j++) {
+                newMat[i][j] = Math.sqrt(entries[i][j]);
+            }
+        }
+
+        return new Matrix(newMat);
+    }
+
     public static Matrix transpose(Vector[] mat) {
         double[][] answer = new double[mat[0].size()][mat.length];
 
@@ -259,7 +307,7 @@ public class Matrix implements Serializable {
         return builder.toString();
     }
 
-    public Matrix concatToLeft(Matrix mat) throws Exception {
+    public Matrix concatToLeftCopy(Matrix mat) throws Exception {
         Pair<Integer, Integer> shape = mat.shape();
 
         int m = entries.length;
@@ -273,7 +321,9 @@ public class Matrix implements Serializable {
 
         double[][] newMat = new double[m][newN];
         for(int i=0;i<m;i++) {
-            System.arraycopy(entries[i], 0, newMat[i], 0, n);
+            for(int j=0;j<n;j++) {
+                newMat[i][j] = entries[i][j];
+            }
 
             for(int j=n;j<newN;j++) {
                 newMat[i][j] = mat.entries[i][j - n];
@@ -281,5 +331,14 @@ public class Matrix implements Serializable {
         }
 
         return new Matrix(newMat);
+    }
+
+    public boolean sameShape(Matrix mat) {
+        int m = entries.length;
+        int n = entries[0].length;
+
+        Pair<Integer, Integer> shape = mat.shape();
+
+        return m == shape.first && n == shape.second;
     }
 }

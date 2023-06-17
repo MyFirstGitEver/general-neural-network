@@ -48,11 +48,11 @@ public class DenseLayer {
             throws Exception {
 
         for(int i=0;i<firstMomentW.length;i++) {
-            W[i].subtract(firstMomentW[i].divide(secondMomentW[i].sqrt(), 10e-8f).scaleBy(learningRate));
+            W[i].subtract(firstMomentW[i].divideCopy(secondMomentW[i].sqrtCopy(), 10e-8f).scaleBy(learningRate));
         }
 
         for(int i=0;i<firstMomentB.size();i++) {
-            B.subtract(firstMomentB.divide(secondMomentB.sqrt(), 10e-8f).scaleBy(learningRate));
+            B.subtract(firstMomentB.divideCopy(secondMomentB.sqrtCopy(), 10e-8f).scaleBy(learningRate));
         }
     }
 

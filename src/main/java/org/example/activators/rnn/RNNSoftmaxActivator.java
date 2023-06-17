@@ -9,7 +9,10 @@ public class RNNSoftmaxActivator extends FeedForwardSoftmaxActivator {
     @Override
     public double g(Neuron[] neuronSet, NumberGenerator backwardIds, int destination) {
         if(backwardIds.count() == 1) {
-            return neuronSet[backwardIds.next()].getValue();
+            int next = backwardIds.next();
+
+            backwardIds.reset();
+            return neuronSet[next].getValue();
         }
 
         return super.g(neuronSet, backwardIds, destination);

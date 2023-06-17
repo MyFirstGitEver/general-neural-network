@@ -164,7 +164,7 @@ public class Vector implements Serializable {
         }
     }
 
-    public Vector divide(Vector v, double eps) throws Exception {
+    public Vector divideCopy(Vector v, double eps) throws Exception {
         Vector answer = new Vector(v.size());
 
         if (v.size() != points.length) {
@@ -192,7 +192,7 @@ public class Vector implements Serializable {
         return this;
     }
 
-    public Vector sqrt() {
+    public Vector sqrtCopy() {
         Vector v = new Vector(points.length);
 
         for (int i = 0; i < v.size(); i++) {

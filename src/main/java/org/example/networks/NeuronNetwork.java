@@ -124,7 +124,7 @@ public class NeuronNetwork {
                 }
 
                 for(CompleteForwarder edgeLayer : forwarders) {
-                    edgeLayer.update(learningRate, outputProcessor.count(), xGetter.size());
+                    edgeLayer.update(learningRate, outputProcessor.count(), to - from + 1);
                 }
             }
         }

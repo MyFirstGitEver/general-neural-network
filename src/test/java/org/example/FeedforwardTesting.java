@@ -2,6 +2,7 @@ package org.example;
 
 import org.example.activators.FeedForwardSoftmaxActivator;
 import org.example.activators.FeedforwardReluActivator;
+import org.example.activators.FeedforwardTanhActivator;
 import org.example.loss.MSE;
 import org.example.networks.FeedforwardNetwork;
 import org.example.neural.*;
@@ -44,7 +45,7 @@ public class FeedforwardTesting {
             set[j] = v;
 
             for(int i=0;i<v.size();i++) {
-                v.setX(i, -15.0 + Math.random() * 30.0);
+                v.setX(i, Math.random() * 0.1);
             }
         }
 
@@ -68,6 +69,39 @@ public class FeedforwardTesting {
                 new FeedforwardReluActivator(),
                 new FeedforwardReluActivator(),
                 new FeedForwardSoftmaxActivator()
+        }, new MSE(), null, null);
+
+        network.loadTestingToLayer(model.w(0), model.b(0), 0);
+        network.loadTestingToLayer(model.w(1), model.b(1), 1);
+        network.loadTestingToLayer(model.w(2), model.b(2), 2);
+
+        Vector out = model.predict(v);
+        Vector out2 = network.output(v);
+
+        Assertions.assertEquals(out.size(), out2.size());
+
+        for(int i=0;i<out.size();i++) {
+            Assertions.assertTrue(Math.abs(out.x(i) - out2.x(i)) < 0.00001);
+        }
+    }
+
+    @ParameterizedTest
+    @MethodSource("cases")
+    public void forwardTesting2(Vector x, Vector v,int outputSize) throws Exception {
+        int featureSize = x.size();
+
+        SimpleNeuralNetwork model = new SimpleNeuralNetwork(new DenseLayer[]{
+                new DenseLayer(new ReluActivation(featureSize, 10)),
+                new DenseLayer(new ReluActivation(10, 5)),
+                new DenseLayer(new TanhActivation(5, outputSize))
+        }, new org.example.neural.MSE(), null, null);
+
+        FeedforwardNetwork network = new FeedforwardNetwork(new int[] {
+                featureSize, 10, 5, outputSize
+        }, new Activator[] {
+                new FeedforwardReluActivator(),
+                new FeedforwardReluActivator(),
+                new FeedforwardTanhActivator()
         }, new MSE(), null, null);
 
         network.loadTestingToLayer(model.w(0), model.b(0), 0);

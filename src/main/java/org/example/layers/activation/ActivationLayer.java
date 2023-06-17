@@ -24,7 +24,6 @@ public abstract class ActivationLayer extends Layer {
             }
 
             y.setValue(activator.g(X, backwardIds, j));
-            backwardIds.reset();
         }
     }
 

@@ -19,7 +19,7 @@ public class CrossEntropy implements Loss {
         Vector delta = new Vector(A.size());
 
         for(int i=0;i<A.size();i++) {
-            delta.setX(i, - Y.x(i) / A.x(i));
+            delta.setX(i, - Y.x(i) / (A.x(i) + 1e-8));
         }
 
         return delta;

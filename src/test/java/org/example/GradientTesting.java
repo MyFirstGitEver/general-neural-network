@@ -66,9 +66,9 @@ public class GradientTesting {
         network.loadTestingToLayer(model.w(1), model.b(1), 1);
         network.loadTestingToLayer(model.w(2), model.b(2), 2);
 
-        model.train(learningRate, 1, 1, 5, "", false, true);
+        model.train(learningRate, iteration, batchSize, 5, "", false, true);
         ObjectInputStream ois = new ObjectInputStream(new FileInputStream("./log.txt"));
-        boolean passed = network.train(learningRate, 1, 1, (List<TestingObject>) ois.readObject(), false);
+        boolean passed = network.train(learningRate, iteration, batchSize, (List<TestingObject>) ois.readObject(), false);
         ois.close();
 
         //Assertions.assertTrue(Math.abs(model.cost() - network.cost()) < 5.0);
@@ -99,7 +99,7 @@ public class GradientTesting {
 
             @Override
             public int size() {
-                return 1;
+                return xTrain.length;
             }
         };
 
@@ -111,7 +111,7 @@ public class GradientTesting {
 
             @Override
             public int size() {
-                return 1;
+                return xTrain.length;
             }
         };
 
