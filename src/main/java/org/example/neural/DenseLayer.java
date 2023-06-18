@@ -51,9 +51,7 @@ public class DenseLayer {
             W[i].subtract(firstMomentW[i].divideCopy(secondMomentW[i].sqrtCopy(), 10e-8f).scaleBy(learningRate));
         }
 
-        for(int i=0;i<firstMomentB.size();i++) {
-            B.subtract(firstMomentB.divideCopy(secondMomentB.sqrtCopy(), 10e-8f).scaleBy(learningRate));
-        }
+        B.subtract(firstMomentB.divideCopy(secondMomentB.sqrtCopy(), 10e-8f).scaleBy(learningRate));
     }
 
     public Vector derivativeByZ(Vector Z, int zIndex) {

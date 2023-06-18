@@ -108,7 +108,7 @@ public class Main {
                         new FeedForwardSoftmaxActivator(),
                 }, new CrossEntropy(), xGetter, yGetter);
 
-        model.train(0.01, 300, 150, null, true);
+        model.train(0.01, 300, 150, null, null,true);
 
         System.out.println("Cost of training set is: " + model.cost());
 
@@ -128,8 +128,8 @@ public class Main {
     }
 
     static void normalise(Pair<Vector, Vector>[] xTrain, Pair<Vector, Vector>[] xTest) {
-        Double[] mean = new Double[xTrain[0].first.size()];
-        Double[] std = new Double[xTrain[0].first.size()];
+        double[] mean = new double[xTrain[0].first.size()];
+        double[] std = new double[xTrain[0].first.size()];
 
         for(Pair<Vector, Vector> p : xTrain) {
             for(int i=0;i<p.first.size();i++) {
@@ -157,6 +157,10 @@ public class Main {
             for(int i=0;i<std.length;i++) {
                 p.first.setX(i, (p.first.x(i) - mean[i]) / std[i]);
             }
+        }
+
+        if(xTest == null) {
+            return;
         }
 
         for(Pair<Vector, Vector> p : xTest) {

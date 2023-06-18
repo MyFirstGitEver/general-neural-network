@@ -92,6 +92,8 @@ public class NeuronNetwork {
         }
 
         int gradientIndex = 0;
+        int paramIndex = 0;
+
         for(int iter=0;iter<iteration;iter++) {
             if(iter % maxToPrint == 0 && printCost) {
                 System.out.println(iter + " iterations have passed. Cost: "  + cost());
@@ -110,8 +112,12 @@ public class NeuronNetwork {
 
                 if(deltaTests != null) {
                     delta = deltaTests.get(gradientIndex);
-                    params = updatedParameters.get(gradientIndex);
                     gradientIndex++;
+                }
+
+                if(updatedParameters != null) {
+                    params = updatedParameters.get(paramIndex);
+                    paramIndex++;
                 }
 
                 //clip();

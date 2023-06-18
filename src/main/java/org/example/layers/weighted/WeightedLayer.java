@@ -211,21 +211,19 @@ public abstract class WeightedLayer extends Layer {
         int outputSize = shape.first;
         int inputSize = shape.second;
 
-        for(int i=0;i<inputSize;i++) {
-            for(int j=0;j<outputSize;j++) {
-                if(Math.abs(wParamsOf.get(hash(i + offset, j)).getValue() - w.at(j, i)) > 1e-18) {
+        if(b != null) {
+            for(int i=0;i<outputSize;i++) {
+                if(Math.abs(bParams[i].getValue() - b.x(i)) > 1e-18) {
                     return false;
                 }
             }
         }
 
-        if(b == null) {
-            return true; // stop here
-        }
-
-        for(int i=0;i<outputSize;i++) {
-            if(Math.abs(bParams[i].getValue() - b.x(i)) > 1e-18) {
-                return false;
+        for(int i=0;i<inputSize;i++) {
+            for(int j=0;j<outputSize;j++) {
+                if(Math.abs(wParamsOf.get(hash(i + offset, j)).getValue() - w.at(j, i)) > 1e-18) {
+                    return false;
+                }
             }
         }
 

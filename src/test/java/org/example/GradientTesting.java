@@ -2,7 +2,6 @@ package org.example;
 
 import org.example.activators.Activator;
 import org.example.activators.FeedForwardLinearActivator;
-import org.example.activators.FeedForwardSoftmaxActivator;
 import org.example.activators.FeedforwardReluActivator;
 import org.example.loss.MSE;
 import org.example.networks.FeedforwardNetwork;
@@ -28,15 +27,16 @@ public class GradientTesting {
     }
 
     private static Arguments[] oneHundredArgs() {
-        Arguments[] args = new Arguments[300];
+        Arguments[] args = new Arguments[20];
 
         for(int i=0;i<args.length;i++) {
             double learningRate = Math.random();
+            int iteration = (int) (20 + Math.random() * 150);
+            int datasetSize = (int) (3000 + 6000 * Math.random());
+            int batchSize = (int) (Math.random() * 70 + 30);
 
-            int datasetSize = (int) (Math.random() * 9469 + 100);
-            int iteration = (int) (Math.random() * 3 + 2);
-
-            args[i] = Arguments.of(learningRate, iteration, datasetSize, datasetSize);
+            args[i] = Arguments.of(
+                    learningRate, 20 + iteration, Math.min(datasetSize, batchSize), datasetSize);
         }
 
         return args;
@@ -49,7 +49,7 @@ public class GradientTesting {
         int featureSize = result.first.at(0).size();
 
         FeedforwardNetwork network = new FeedforwardNetwork(new int[] {
-                featureSize, 3, 5, 1
+                featureSize, 15, 3, 1
         }, new Activator[] {
                 new FeedforwardReluActivator(),
                 new FeedforwardReluActivator(),
@@ -57,9 +57,9 @@ public class GradientTesting {
         }, new MSE(), result.first, result.second);
 
         SimpleNeuralNetwork model = new SimpleNeuralNetwork(new DenseLayer[]{
-                new DenseLayer(new ReluActivation(featureSize, 3)),
-                new DenseLayer(new ReluActivation(3, 5)),
-                new DenseLayer(new LinearActivation(5, 1))
+                new DenseLayer(new ReluActivation(featureSize, 15)),
+                new DenseLayer(new ReluActivation(15, 3)),
+                new DenseLayer(new LinearActivation(3, 1))
         }, new org.example.neural.MSE(), result.first, result.second);
 
         network.loadTestingToLayer(model.w(0), model.b(0), 0);
@@ -68,8 +68,12 @@ public class GradientTesting {
 
         model.train(learningRate, iteration, batchSize, 5, "", false, true);
         ObjectInputStream ois = new ObjectInputStream(new FileInputStream("./log.txt"));
-        boolean passed = network.train(learningRate, iteration, batchSize, (List<TestingObject>) ois.readObject(), false);
+        ObjectInputStream paramsOis = new ObjectInputStream(new FileInputStream("./params.txt"));
+
+        boolean passed = network.train(learningRate, iteration, batchSize, (List<TestingObject>) ois.readObject(),
+                (List<TestingObject>) paramsOis.readObject(), false);
         ois.close();
+        paramsOis.close();
 
         //Assertions.assertTrue(Math.abs(model.cost() - network.cost()) < 5.0);
         Assertions.assertTrue(passed);
@@ -115,6 +119,7 @@ public class GradientTesting {
             }
         };
 
+        Main.normalise(xTrain,null);
         return new Pair<>(xGetter, yGetter);
     }
 }

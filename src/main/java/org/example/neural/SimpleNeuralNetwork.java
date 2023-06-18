@@ -55,12 +55,14 @@ public class SimpleNeuralNetwork {
                       int batchSize,
                       int maxToSave,
                       String alias, boolean printCost, boolean printLog) throws Exception {
-        List<TestingObject> tests = null;
-        ObjectOutputStream oos = null;
+        List<TestingObject> tests = null, params = null;
+        ObjectOutputStream oos = null, paramOos = null;
 
         if(printLog) {
             oos = new ObjectOutputStream(new FileOutputStream("./log.txt"));
+            paramOos = new ObjectOutputStream(new FileOutputStream("./params.txt"));
             tests =  new ArrayList<>();
+            params = new ArrayList<>();
         }
 
         int iteration = 0;
@@ -107,12 +109,17 @@ public class SimpleNeuralNetwork {
                     v.reset();
                 }
 
-                computeGradient(j, j + Math.min(batchSize - 1, xGetter.size() - 1 - j), dW, dB);
-                log(dW, dB, tests);
+                int from = j;
+                int to = j + Math.min(batchSize - 1, xGetter.size() - 1 - j);
+
+                computeGradient(from, to, dW, dB);
+                if(printLog) {
+                    log(dW, dB, tests);
+                }
 
                 for(int i=0;i<layers.length;i++) {
-                    dW[i].divideBy(xGetter.size());
-                    dB[i].divideBy(xGetter.size());
+                    dW[i].divideBy(to - from + 1);
+                    dB[i].divideBy(to - from + 1);
 
                     firstMomentW[i].scale(beta).add(dW[i].copy().scale(1 - beta));
                     secondMomentW[i].scale(beta2).add(dW[i].square().scale(1 - beta2));
@@ -126,6 +133,18 @@ public class SimpleNeuralNetwork {
                             firstMomentB[i],
                             secondMomentB[i], learningRate);
                 }
+
+                if(printLog) {
+                    Matrix[] W = new Matrix[layers.length];
+                    Vector[] B = new Vector[layers.length];
+
+                    for(int i=0;i<layers.length;i++) {
+                        W[i] = new Matrix(layers[i].getW());
+                        B[i] = layers[i].getB();
+                    }
+
+                    log(W, B, params);
+                }
             }
 
             iteration++;
@@ -133,6 +152,7 @@ public class SimpleNeuralNetwork {
 
         if(oos != null) {
             oos.writeObject(tests);
+            paramOos.writeObject(params);
             oos.close();
         }
 
