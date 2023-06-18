@@ -143,7 +143,7 @@ public abstract class WeightedLayer extends Layer {
 
         for(int i=0;i<inputSize;i++) {
             for(int j=0;j<outputSize;j++) {
-                if(Math.abs(wParamsOf.get(hash(i + offset, j)).getDValue() - dW.at(j, i)) > 0.01) {
+                if(Math.abs(wParamsOf.get(hash(i + offset, j)).getDValue() - dW.at(j, i)) > 1e-18) {
                     return false;
                 }
             }
@@ -154,7 +154,7 @@ public abstract class WeightedLayer extends Layer {
         }
 
         for(int i=0;i<outputSize;i++) {
-            if(Math.abs(bParams[i].getDValue() - dB.x(i)) > 0.01) {
+            if(Math.abs(bParams[i].getDValue() - dB.x(i)) > 1e-18) {
                 return false;
             }
         }
@@ -203,5 +203,32 @@ public abstract class WeightedLayer extends Layer {
         for(int i=0;i<bParams.length;i++) {
             bParams[i].setDValue(db.x(i));
         }
+    }
+
+    public boolean validParams(Matrix w, Vector b, int offset) {
+        Pair<Integer, Integer> shape = w.shape();
+
+        int outputSize = shape.first;
+        int inputSize = shape.second;
+
+        for(int i=0;i<inputSize;i++) {
+            for(int j=0;j<outputSize;j++) {
+                if(Math.abs(wParamsOf.get(hash(i + offset, j)).getValue() - w.at(j, i)) > 1e-18) {
+                    return false;
+                }
+            }
+        }
+
+        if(b == null) {
+            return true; // stop here
+        }
+
+        for(int i=0;i<outputSize;i++) {
+            if(Math.abs(bParams[i].getValue() - b.x(i)) > 1e-18) {
+                return false;
+            }
+        }
+
+        return true;
     }
 }

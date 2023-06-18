@@ -3,6 +3,7 @@ package org.example.networks;
 import org.example.TestingObject;
 import org.example.Vector;
 import org.example.chooser.concaters.RNNConcater;
+import org.example.chooser.numbergenerators.SequentialGenerator;
 import org.example.chooser.outputchoosers.RNNOutputProcessor;
 import org.example.layers.CompleteForwarder;
 
@@ -35,11 +36,12 @@ public class RNN {
 
         model = new NeuronNetwork(
                 edgeLayers, new CrossEntropy(), new RNNConcater(),
-                new RNNOutputProcessor(timeStep, outputSize), xGetter, yGetter);
+                new RNNOutputProcessor(timeStep, outputSize), xGetter, yGetter, new SequentialGenerator(0, 2));
     }
 
-    public boolean train(double learningRate, int iteration, int batchSize, boolean printCost, List<TestingObject> tests) throws Exception {
-        return model.train(learningRate, iteration, batchSize, 10, tests, printCost);
+    public boolean train(double learningRate, int iteration, int batchSize, boolean printCost,
+                         List<TestingObject> tests, List<TestingObject> params) throws Exception {
+        return model.train(learningRate, iteration, batchSize, 10, tests, params, printCost);
     }
 
     public Vector output(Vector[] inputs) throws Exception {

@@ -24,18 +24,23 @@ public class NeuronNetwork {
 
     private final DataGetter<Vector> yGetter;
 
+    private final NumberGenerator updateParamsInstructor;
+
     public NeuronNetwork(
             CompleteForwarder[] forwarders,
             Loss loss,
             Concater concater,
             OutputProcessor outputProcessor,
             DataGetter<Vector[]> xGetter,
-            DataGetter<Vector> yGetter) throws Exception {
+            DataGetter<Vector> yGetter,
+            NumberGenerator updateParamsInstructor) throws Exception {
 
         this.forwarders = forwarders;
         this.loss = loss;
         this.concater = concater;
         this.outputProcessor = outputProcessor;
+
+        this.updateParamsInstructor = updateParamsInstructor;
 
         this.xGetter = xGetter;
         this.yGetter = yGetter;
@@ -75,8 +80,13 @@ public class NeuronNetwork {
         return outputs;
     }
 
-    public boolean train(double learningRate, int iteration, int batchSize,
-                         int maxToPrint, List<TestingObject> tests, boolean printCost) throws Exception {
+    public boolean train(double learningRate,
+                         int iteration,
+                         int batchSize,
+                         int maxToPrint,
+                         List<TestingObject> deltaTests,
+                         List<TestingObject> updatedParameters,
+                         boolean printCost) throws Exception {
         if(batchSize > xGetter.size()) {
             throw new Exception("Failed to train because dataset is smaller than batch");
         }
@@ -95,23 +105,25 @@ public class NeuronNetwork {
                     backward(xGetter.at(j), yGetter.at(j));
                 }
 
-                TestingObject data = null;
+                TestingObject delta = null;
+                TestingObject params = null;
 
-                if(tests != null) {
-                    data = tests.get(gradientIndex);
+                if(deltaTests != null) {
+                    delta = deltaTests.get(gradientIndex);
+                    params = updatedParameters.get(gradientIndex);
                     gradientIndex++;
                 }
 
                 //clip();
 
-                if(data != null) {
+                if(delta != null) {
                     int index = 0;
 
-                    Matrix[] W = data.getdW();
-                    Vector[] B = data.getdB();
-                    int[] offsets = data.getOffset();
+                    Matrix[] W = delta.getdW();
+                    Vector[] B = delta.getdB();
+                    int[] offsets = delta.getOffset();
 
-                    NumberGenerator layerChooser = data.getLayerChooser();
+                    NumberGenerator layerChooser = delta.getLayerChooser();
                     Integer test;
 
                     while((test = layerChooser.next()) != null) {
@@ -123,8 +135,29 @@ public class NeuronNetwork {
                     }
                 }
 
-                for(CompleteForwarder edgeLayer : forwarders) {
-                    edgeLayer.update(learningRate, outputProcessor.count(), to - from + 1);
+                Integer next;
+
+                while((next = updateParamsInstructor.next()) != null) {
+                    forwarders[next].update(learningRate, outputProcessor.count(), to - from + 1);
+                }
+
+                if(params != null) {
+                    int index = 0;
+
+                    Matrix[] W = params.getdW();
+                    Vector[] B = params.getdB();
+                    int[] offsets = params.getOffset();
+
+                    NumberGenerator layerChooser = params.getLayerChooser();
+                    Integer test;
+
+                    while((test = layerChooser.next()) != null) {
+                        if(!forwarders[test].validParams(W[index], B[index], offsets[index])) {
+                            return false;
+                        }
+
+                        index++;
+                    }
                 }
             }
         }

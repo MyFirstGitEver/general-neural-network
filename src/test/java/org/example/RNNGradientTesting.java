@@ -38,19 +38,13 @@ public class RNNGradientTesting {
     }
 
     private static Arguments[] args() {
-        Arguments[] args = new Arguments[100];
+        Arguments[] args = new Arguments[40];
 
         for(int i=0;i<args.length;i++) {
-            int iteration = (int) (Math.random() * 2);
-            int datasetSize;
-
-            if(iteration > 1) {
-                datasetSize = 1;
-            }
-            else {
-                datasetSize = (int) (Math.random() * 100);
-            }
+            int iteration = (int) (3  + Math.random() * 7);
+            int datasetSize = (int) (Math.random() * 100 + 200);
             int inputSize = (int) (Math.random() * 10 + 315);
+            int outputSize = (int) (Math.random() * 2 + 2);
 
             Vector[][] dataset = new Vector[datasetSize][];
             Vector[] labels = new Vector[datasetSize];
@@ -62,14 +56,14 @@ public class RNNGradientTesting {
             }
 
             for(int j=0;j<dataset.length;j++) {
-                labels[j] = randomOneHotVector(2);
+                labels[j] = randomOneHotVector(outputSize);
             }
 
             args[i] = Arguments.of(
                     inputSize,
-                    2,
+                    outputSize,
                     (int) (Math.random() * 15 + 30),
-                    timeStep, dataset, labels, (int) Math.min(dataset.length, Math.random() * 100), iteration);
+                    timeStep, dataset, labels, (int) Math.min(dataset.length, Math.random() * 70 + 30), iteration);
         }
 
 
@@ -87,7 +81,7 @@ public class RNNGradientTesting {
     @ParameterizedTest
     @MethodSource("cases2")
     public void testWyhGradient(int inputSize, int outputSize, int priorKnowledgeSize, int timeStep,
-                                Vector[][] dataset, Vector[] labels, int batchSIze, int iteration) throws Exception {
+                                Vector[][] dataset, Vector[] labels, int batchSize, int iteration) throws Exception {
         RNNTester tester = new RNNTester(inputSize, outputSize, priorKnowledgeSize, timeStep);
         DataGetter<Vector[]> xGetter = new DataGetter<>() {
             @Override
@@ -118,13 +112,15 @@ public class RNNGradientTesting {
         rnn.loadParameters(tester.getWhh(), tester.getWhx(), tester.getWyh(), tester.getBh(), tester.getBy());
 
         // Preparing test parameters!
-        tester.train(dataset, labels, batchSIze, iteration, 0.001);
+        tester.train(dataset, labels, batchSize, iteration, 0.001);
 
         // read logs and test all parameters!
         ObjectInputStream ois = new ObjectInputStream(new FileInputStream("./log.txt"));
+        ObjectInputStream paramsOis = new ObjectInputStream(new FileInputStream("./params.txt"));
+
         boolean passed =
-                rnn.train(0.001, iteration, batchSIze,
-                        false, (List<TestingObject>) ois.readObject());
+                rnn.train(0.001, iteration, batchSize,
+                        false, (List<TestingObject>) ois.readObject(), (List<TestingObject>) paramsOis.readObject());
         ois.close();
 
         Assertions.assertTrue(passed);

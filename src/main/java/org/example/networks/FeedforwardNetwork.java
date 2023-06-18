@@ -4,6 +4,7 @@ import org.example.TestingObject;
 import org.example.Vector;
 import org.example.activators.FeedForwardSoftmaxActivator;
 import org.example.chooser.concaters.Concater;
+import org.example.chooser.numbergenerators.SequentialGenerator;
 import org.example.chooser.outputchoosers.OutputProcessor;
 import org.example.layers.CompleteForwarder;
 import org.example.layers.Layer;
@@ -61,7 +62,7 @@ public class FeedforwardNetwork {
             public int count() {
                 return 1;
             }
-        }, convertedXGetter, yGetter);
+        }, convertedXGetter, yGetter, new SequentialGenerator(0, layers.length));
     }
 
     public Vector output(Vector input) throws Exception {
@@ -71,7 +72,7 @@ public class FeedforwardNetwork {
     }
 
     public boolean train(double learningRate, int iteration, int batchSize, List<TestingObject> tests, boolean printCost) throws Exception {
-        return model.train(learningRate, iteration, batchSize, 10, tests, printCost);
+        return model.train(learningRate, iteration, batchSize, 10, tests, null, printCost);
     }
 
     public void loadTestingToLayer(Vector[] W, Vector B, int layerId) {

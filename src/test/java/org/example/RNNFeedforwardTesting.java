@@ -35,14 +35,14 @@ public class RNNFeedforwardTesting {
 
         for(int j=0;j<num;j++) {
             if(size == null) {
-                size = (int) (Math.random() * 300 + 15);
+                size = (int) (Math.random() * 2 + 3);
             }
 
             Vector v = new Vector(size);
             set[j] = v;
 
             for(int i=0;i<v.size();i++) {
-                v.setX(i, Math.random() * 0.001);
+                v.setX(i, Math.random() * 0.01);
             }
         }
 
@@ -51,12 +51,12 @@ public class RNNFeedforwardTesting {
 
     @ParameterizedTest
     @MethodSource("cases")
-    public void feedforwardTesting(int inputSize, int outputSize, int priorKnowledgeSize, int layers, Vector[] input)
+    public void feedforwardTesting(int inputSize, int outputSize, int priorKnowledgeSize, int timeStep, Vector[] input)
             throws Exception {
-        RNNTester tester = new RNNTester(inputSize, outputSize, priorKnowledgeSize, layers);
+        RNNTester tester = new RNNTester(inputSize, outputSize, priorKnowledgeSize, timeStep);
         Vector[] outputs = tester.feedforward(input);
 
-        RNN rnn = new RNN(inputSize, priorKnowledgeSize, outputSize, layers, null,null);
+        RNN rnn = new RNN(inputSize, priorKnowledgeSize, outputSize, timeStep, null,null);
         rnn.loadParameters(tester.getWhh(), tester.getWhx(), tester.getWyh(), tester.getBh(), tester.getBy());
         Vector[] rnnOutputs = rnn.outputs(input);
 

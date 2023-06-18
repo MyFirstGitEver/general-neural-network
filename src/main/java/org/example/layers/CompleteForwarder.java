@@ -16,7 +16,6 @@ import org.example.neural.Matrix;
 public class CompleteForwarder {
     private final WeightedLayer weightedLayer;
     private final ActivationLayer activationLayer;
-
     public static final class Builder {
         public static CompleteForwarder buildDenseDense(
                 int inputSize,
@@ -150,6 +149,10 @@ public class CompleteForwarder {
 
     public boolean valid(Matrix dW, Vector dB, int offset) {
         return weightedLayer.valid(dW, dB, offset);
+    }
+
+    public boolean validParams(Matrix W, Vector B, int offset) {
+        return weightedLayer.validParams(W, B, offset);
     }
 
     public CompleteForwarder sharedLayersForwarder(Layer lastLayer) throws Exception {

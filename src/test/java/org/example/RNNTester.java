@@ -33,6 +33,8 @@ public class RNNTester {
 
     private final List<TestingObject> tests = new ArrayList<>();
 
+    private final List<TestingObject> updatedParams = new ArrayList<>();
+
     private final static double beta = 0.9f;
     private final static double beta2 = 0.999f;
 
@@ -133,14 +135,16 @@ public class RNNTester {
                     backward(dataset[iteration], labels[iteration]);
                 }
 
-                addToLog();
+                addDeltaToLog();
 
-                dWyh.divideBy(layers * dataset.length);
-                dWhh.divideBy(layers * dataset.length);
-                dWhx.divideBy(layers * dataset.length);
+                int currentBatchSize = to - from + 1;
 
-                dby.divideBy(layers * dataset.length);
-                dbh.divideBy(layers * dataset.length);
+                dWyh.divideBy(layers * currentBatchSize);
+                dWhh.divideBy(layers * currentBatchSize);
+                dWhx.divideBy(layers * currentBatchSize);
+
+                dby.divideBy(layers * currentBatchSize);
+                dbh.divideBy(layers * currentBatchSize);
 
                 updateW(Wyh, firstWyh, secondWyh, dWyh, learningRate);
                 updateW(Whh, firstWhh, secondWhh, dWhh, learningRate);
@@ -148,12 +152,18 @@ public class RNNTester {
 
                 updateB(by, firstBy, secondBy, dby, learningRate);
                 updateB(bh, firstBh, secondBh, dbh, learningRate);
+                
+                addParamsToLog();
             }
         }
 
         // write log to file
         ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream("./log.txt"));
         oos.writeObject(tests);
+        oos.close();
+
+        oos = new ObjectOutputStream(new FileOutputStream("./params.txt"));
+        oos.writeObject(updatedParams);
         oos.close();
     }
 
@@ -228,7 +238,7 @@ public class RNNTester {
         }
     }
 
-    private void addToLog() throws Exception {
+    private void addDeltaToLog() throws Exception {
         Matrix dWyhCopy = dWyh.copy();
         Vector dbyCopy = dby.copy();
         Vector dbhCopy = dbh.copy();
@@ -240,6 +250,20 @@ public class RNNTester {
                 dbyCopy,
                 dbhCopy
         }, new int[] { 0,  by.size()}, new BackwardGenerator(1, -1)));
+    }
+
+    private void addParamsToLog() {
+        Matrix[] W = new Matrix[3];
+        Vector[] B = new Vector[3];
+
+        W[0] = this.Wyh.copy();
+        W[1] = this.Whh.copy();
+        W[2] = this.Whx.copy();
+
+        B[0] = this.by.copy();
+        B[1] = this.bh.copy();
+
+        updatedParams.add(new TestingObject(W, B, new int[] { 0,  by.size()}, new BackwardGenerator(1, - 1)));
     }
 
     private Vector error(Vector z, Vector dLdA, ActivationFunction activationFunction) {
